@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   Image,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -9,6 +8,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "../../context/authContext";
 
 // ─── Color Tokens ────────────────────────────────────────────────────────────
 const colors = {
@@ -73,6 +75,7 @@ function formatTime(seconds: number): string {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function FonectHome() {
+  const { profile } = useAuth();
   const [timeLeft, setTimeLeft] = useState(23 * 3600 + 22 * 60 + 5);
 
   useEffect(() => {
@@ -99,7 +102,7 @@ export default function FonectHome() {
       >
         {/* Welcome */}
         <View style={styles.section}>
-          <Text style={styles.welcomeHeading}>Hello, User A</Text>
+          <Text style={styles.welcomeHeading}>Hello, {profile?.name || "Null"}</Text>
           <Text style={styles.welcomeSubtext}>
             Welcome back to the campus recovery hub.
           </Text>
