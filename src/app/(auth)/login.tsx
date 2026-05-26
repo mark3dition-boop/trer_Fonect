@@ -6,19 +6,36 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 
 // Icon components using Unicode/Emoji as placeholder
 // In a real app, replace with react-native-vector-icons or similar
 
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { supabase } from '../../lib/supabase';
 
 
 export default function login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+
+  const handleLogin = async () => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      alert(error.message);
+    }
+    else {
+      router.push('/(tabs)/home');
+    }
+  }
 
   return (
     <ScrollView
@@ -88,27 +105,15 @@ export default function login() {
         </View>
 
         {/* Login Button */}
-        <TouchableOpacity style={styles.loginButton} activeOpacity={0.85}>
+        <TouchableOpacity style={styles.loginButton} activeOpacity={0.85} onPress={handleLogin}>
           <Text style={styles.loginButtonText}>Masuk Sekarang</Text>
         </TouchableOpacity>
 
-        {/* Divider */}
-        <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>Atau masuk dengan</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        {/* Google Button */}
-        <TouchableOpacity style={styles.googleButton} activeOpacity={0.85}>
-          <Text style={styles.googleButtonIcon}>🌐</Text>
-          <Text style={styles.googleButtonText}>Google</Text>
-        </TouchableOpacity>
 
         {/* Sign Up */}
         <View style={styles.signupRow}>
           <Text style={styles.signupText}>Belum punya akun? </Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
             <Text style={styles.signupLink}>Daftar Gratis</Text>
           </TouchableOpacity>
         </View>
@@ -117,7 +122,7 @@ export default function login() {
       {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          © 2024 TemuKembali — Membantu Memulihkan Barang Hilang.
+          © 2026 Fonect — Membantu Memulihkan Barang Hilang.
         </Text>
       </View>
     </ScrollView>
