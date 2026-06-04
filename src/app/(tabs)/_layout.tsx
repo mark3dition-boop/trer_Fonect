@@ -28,6 +28,25 @@ export default function TabsLayout() {
         }}
       />
 
+      // Hide Upload from tab bar
+      <Tabs.Screen
+        name="upload_item"
+        options={{
+          href: null, // menyembunyikan dari tab bar
+        }}
+      />
+
+      <Tabs.Screen
+        name="foundItems"
+        options={{
+          title: "My Founds",
+
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="albums" size={size} color={color} />
+          ),
+        }}
+      />
+
       <Tabs.Screen
         name="search"
         options={{
@@ -35,17 +54,6 @@ export default function TabsLayout() {
 
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="search" size={size} color={color} />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="activities"
-        options={{
-          title: "Activities",
-
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="time" size={size} color={color} />
           ),
         }}
       />
