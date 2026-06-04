@@ -12,12 +12,4 @@ export default function Index() {
 
   return <Redirect href="/(auth)/login" />;
 
-  // const isAuth = true; // Replace with actual authentication check
-
-  // if (isAuth) {
-  //   return <Redirect href="/(tabs)/home" />;
-  // } else {
-  //   return <Redirect href="/(auth)/login" />;
-  // }
-
 }

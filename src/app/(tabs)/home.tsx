@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -9,8 +9,10 @@ import {
   View,
 } from "react-native";
 
+import { useFocusEffect, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../context/authContext";
+import { supabase } from "../../lib/supabase";
 
 // ─── Color Tokens ────────────────────────────────────────────────────────────
 const colors = {
@@ -52,7 +54,7 @@ const colors = {
   onSecondaryFixed: "#00201d",
   onTertiary: "#ffffff",
   onErrorContainer: "#93000a",
-  primary: "#002045",
+  primary: "#1A56E8",
   tertiaryFixedDim: "#ffb77d",
   surfaceContainerLowest: "#ffffff",
   inverseOnSurface: "#eaf1ff",
@@ -73,17 +75,126 @@ function formatTime(seconds: number): string {
   return `${h}:${m}:${s}`;
 }
 
+function getTimeAgo(createdAt: string) {
+  const now = new Date();
+  const createdDate = new Date(createdAt);
+
+  const diffMs = now.getTime() - createdDate.getTime();
+
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes}m ago`;
+  }
+
+  if (diffHours < 24) {
+    return `${diffHours}h ago`;
+  }
+
+  return `${diffDays}d ago`;
+}
+
+type BadgeType = "authority-handled" | "found" | "returned";
+
+function getBadgeStyle(status: BadgeType) {
+  const colorMap: Record<BadgeType, string> = {
+    found: colors.primary,        // biru
+    returned: "#006a61",   // hijau (#006a61)
+    "authority-handled": "#43474e", // abu-abu
+  };
+
+  return {
+    backgroundColor: colorMap[status] ?? colors.primary,
+  };
+}
+
+function getBadgeText(status: BadgeType) {
+  if (status === "authority-handled") {
+    return "Authority-Handled";
+  } else if (status === "found") {
+    return "Found";
+  } else {
+    return "Returned";
+  }
+}
+
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function FonectHome() {
   const { profile } = useAuth();
-  const [timeLeft, setTimeLeft] = useState(23 * 3600 + 22 * 60 + 5);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const router = useRouter();
+  const [userItem, setUserItem] = useState<any>(null);
+  const [othersItem, setOthersItem] = useState<any>(null);
+  const [foundItems, setFoundItems] = useState<number | null>(null);
+  const [returnedItems, setReturnedItems] = useState<number | null>(null);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+      if (!userItem?.created_at) return;
+
+      const deadline = new Date(userItem.created_at).getTime() + 24 * 60 * 60 * 1000;
+
+      const tick = () => setTimeLeft(Math.floor((deadline - Date.now()) / 1000));
+
+      tick();
+      const interval = setInterval(tick, 1000);
+      return () => clearInterval(interval);
+  }, [userItem?.created_at]);
+
+  async function fetchItems() {
+    const STATUS_ORDER: Record<string, number> = {
+      found: 0,
+      returned: 1,
+      "authority-handled": 2,
+    };
+
+    const { data: user_items, error: user_item_error } = await supabase
+      .from("items")
+      .select("*")
+      .eq("user_id", profile?.id)
+      .in("status", ["found", "returned", "authority-handled"])
+      .order("created_at", { ascending: false });
+
+    const user_item = user_items
+      ?.sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status])
+      ?.at(0) ?? null;
+
+    setUserItem(user_item);
+
+    const { data: others_item, error: others_item_error } =
+      await supabase
+        .from("items")
+        .select("*")
+        .neq("user_id", profile?.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+    setOthersItem(others_item);
+
+    const { count: found_items, error: count_error } = await supabase
+        .from('items')
+        .select('*', { count: 'exact', head: true }) // head: true = tidak fetch rows, hanya count
+        .eq('user_id', profile?.id);
+    
+    const { count: returned_items, error: returnedCount_error } = await supabase
+        .from('items')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', profile?.id)
+        .in('status', ['returned', 'authority-handled']);
+    
+    setFoundItems(found_items);
+    setReturnedItems(returned_items);
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchItems();
+    }, [profile?.id])
+  );
+
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -126,7 +237,7 @@ export default function FonectHome() {
               Help a fellow student by reporting items found on campus.
             </Text>
           </View>
-          <TouchableOpacity style={styles.reportButton} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.reportButton} activeOpacity={0.8} onPress={() => router.push('/upload_item')}>
             <Text style={styles.reportButtonIcon}>＋</Text>
             <Text style={styles.reportButtonText}>Report Found Item</Text>
           </TouchableOpacity>
@@ -136,92 +247,123 @@ export default function FonectHome() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>My Found Items</Text>
-            <TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/foundItems')}
+            >
               <Text style={styles.sectionLink}>View All</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Item Card */}
-          <TouchableOpacity
-            style={styles.itemCard}
-            activeOpacity={0.85}
-          >
-            {/* Image */}
-            <View style={styles.itemImageWrapper}>
-              <Image
-                source={{
-                  uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuCPzENOOaZdGmjRyoxw4O8KuZVbW8JuXIwjb8_zQ48w-RhY3SM24NI-2UrCrF4TanvqEOzWuKyjOqvk2ElQtEmdPamwhwWSPNXMa-A0OWY-OFU_VEqTwIlSSrKw6kNfiAEzZ7r5vsxQz9tjyj56KHQR_8jO_pOu5aWzdvN7VLEoB9U_r7XHYDb3SLxanV6Ab5hdqJvLum3ouLli0MEjEpnwEASyAGCux77sVoj0hxqJHkZ0CViAXDy4DMzEO061-rXiGPmWV7JcRRY",
-                }}
-                style={styles.itemImage}
-                resizeMode="cover"
-              />
-              <View style={styles.itemBadge}>
-                <Text style={styles.itemBadgeText}>Found</Text>
+          {foundItems === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No item has been found</Text>
               </View>
-            </View>
-
-            {/* Card Content */}
-            <View style={styles.itemContent}>
-              <Text style={styles.itemName}>Samsung Charger</Text>
-              <View style={styles.itemLocationRow}>
-                <Text style={styles.locationIcon}>📍</Text>
-                <Text style={styles.itemLocation}>
-                  Science Building - Room 302
-                </Text>
-              </View>
-
-              {/* Countdown */}
-              <View style={styles.countdownBox}>
-                <View style={styles.countdownLeft}>
-                  <Text style={styles.clockIcon}>🕐</Text>
-                  <Text style={styles.countdownLabel}>Return within:</Text>
-                </View>
-                <Text style={styles.countdownTimer}>
-                  {formatTime(timeLeft)}
-                </Text>
-              </View>
-
-              {/* Actions */}
-              <TouchableOpacity
-                style={styles.returnButton}
+            ) : ( 
+               <TouchableOpacity
+                style={styles.itemCard}
                 activeOpacity={0.85}
+                onPress={() => router.push({
+                  pathname: '/item_details',
+                  params: { itemId: userItem?.id }
+                })}
               >
-                <Text style={styles.returnButtonText}>Return Item</Text>
-              </TouchableOpacity>
+              {/* Image */}
+              <View style={styles.itemImageWrapper}>
+                <Image
+                  source={{
+                    uri: userItem?.img_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuDNzgnn-nGuYAjzXxv_hWz1FamjogWiN0Yp6WBZ8J5PRVXQ6T1KKpB-nX0GoEjGJqALQSpN8XO1jlFJ6rbo8EYglZQekz6XrtLZ1ZvJILFgYN07sVElI6Gz9OR2UpHJqrVcTVi81rOkGE--UdWntwLCvoVnt4uv5K5RSpArMQNwMewpbN2IItk3QArcjOlyNoTw0vjYAFir-ow-auA-USAHMcux_hk76GV8OlnXYP7Hg1ZBdvAdYHPHjWf1h1JBaosH5P4CCxCQp"
+                  }}
+                  style={styles.itemImage}
+                  resizeMode="cover"
+                />
+                <View style={[styles.itemBadge, getBadgeStyle(userItem?.status || "null")]}>
+                  <Text style={styles.itemBadgeText}>{getBadgeText(userItem?.status || "null")}</Text>
+                </View>
+              </View>
+              <View style={styles.itemContent}>
+                <Text style={styles.itemName}>{userItem?.item_name || "Null"}</Text>
+                <View style={styles.itemLocationRow}>
+                  <Text style={styles.locationIcon}>📍</Text>
+                  <Text style={styles.itemLocation}>
+                    {userItem?.location || "Null"}
+                  </Text>
+                </View>
+
+
+                {userItem?.status === "found" && (
+                  <>
+                    {/* Countdown */}
+                    <View style={[
+                      styles.countdownBox,
+                      timeLeft !== null && timeLeft <= 0 && { borderColor: "#ba1a1a" }
+                    ]}>
+                      <View style={styles.countdownLeft}>
+                        <Text style={styles.clockIcon}>🕐</Text>
+                        <Text style={styles.countdownLabel}>Return within:</Text>
+                      </View>
+                      {timeLeft === null ? (
+                        <Text style={styles.countdownTimer}>--:--:--</Text>
+                      ) : timeLeft <= 0 ? (
+                        <Text style={[styles.countdownTimer, { color: "#ba1a1a", fontSize: 13 }]}>
+                          Return ASAP!
+                        </Text>
+                      ) : (
+                        <Text style={styles.countdownTimer}>{formatTime(timeLeft)}</Text>
+                      )}
+                    </View>
+
+                    {/* Actions */}
+                    <TouchableOpacity
+                      style={styles.returnButton}
+                      activeOpacity={0.85}
+                      onPress={() => router.push({
+                        pathname: '/item_details',
+                        params: { itemId: userItem?.id }
+                      })}
+                    >
+                      <Text style={styles.returnButtonText}>Return Item</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
             </View>
           </TouchableOpacity>
+          )}
         </View>
 
         {/* Found Items by Others */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Found Item by Others</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/search')}>
               <Text style={styles.sectionLink}>See All</Text>
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.otherItemCard} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={styles.otherItemCard}
+            activeOpacity={0.85}
+            onPress={() => router.push({
+              pathname: '/item_details',
+              params: { itemId: othersItem?.id }
+            })}
+          >
             <Image
               source={{
-                uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuDNzgnn-nGuYAjzXxv_hWz1FamjogWiN0Yp6WBZ8J5PRVXQ6T1KKpB-nX0GoEjGJqALQSpN8XO1jlFJ6rbo8EYglZQekz6XrtLZ1ZvJILFgYN07sVElI6Gz9OR2UpHJqrVcTVi81rOkGE--UdWntwLCvoVnt4uv5K5RSpArMQNwMewpbN2IItk3QArcjOlyNoTw0vjYAFir-ow-auA-USAHMcux_hk76GV8OlnXYP7Hg1ZBdvAdYHPHjWf1h1JBaosH5P4CCxCQpFQ",
+                uri: othersItem?.img_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuDNzgnn-nGuYAjzXxv_hWz1FamjogWiN0Yp6WBZ8J5PRVXQ6T1KKpB-nX0GoEjGJqALQSpN8XO1jlFJ6rbo8EYglZQekz6XrtLZ1ZvJILFgYN07sVElI6Gz9OR2UpHJqrVcTVi81rOkGE--UdWntwLCvoVnt4uv5K5RSpArMQNwMewpbN2IItk3QArcjOlyNoTw0vjYAFir-ow-auA-USAHMcux_hk76GV8OlnXYP7Hg1ZBdvAdYHPHjWf1h1JBaosH5P4CCxCQpFQ",
               }}
               style={styles.otherItemImage}
               resizeMode="cover"
             />
             <View style={styles.otherItemContent}>
-              <Text style={styles.otherItemName}>Blue Umbrella</Text>
+              <Text style={styles.otherItemName}>{othersItem?.item_name || "Null"}</Text>
               <View style={styles.itemLocationRow}>
                 <Text style={styles.locationIcon}>📍</Text>
                 <Text style={styles.otherItemLocation}>
-                  Library - 2nd Floor
+                  {othersItem?.location || "Null"}
                 </Text>
               </View>
               <View style={styles.otherItemFooter}>
-                <Text style={styles.postedTime}>Posted 2h ago</Text>
-                <TouchableOpacity>
-                  <Text style={styles.contactLink}>Contact Finder</Text>
-                </TouchableOpacity>
+                <Text style={styles.postedTime}>{getTimeAgo(othersItem?.created_at)}</Text>
               </View>
             </View>
           </TouchableOpacity>
@@ -230,14 +372,14 @@ export default function FonectHome() {
         {/* Stats Bento Grid */}
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
-            <Text style={styles.statIcon}>✅</Text>
-            <Text style={styles.statNumber}>12</Text>
+            <Text style={styles.statIcon}>🔎</Text>
+            <Text style={styles.statNumber}>{foundItems}</Text>
             <Text style={styles.statLabel}>Items Found</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statIcon}>⭐</Text>
-            <Text style={styles.statNumber}>450</Text>
-            <Text style={styles.statLabel}>Community Pts</Text>
+            <Text style={styles.statIcon}>✅</Text>
+            <Text style={styles.statNumber}>{returnedItems}</Text>
+            <Text style={styles.statLabel}>Items Returned</Text>
           </View>
         </View>
       </ScrollView>
@@ -415,7 +557,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 8,
     left: 8,
-    backgroundColor: colors.tertiaryContainer,
+    backgroundColor: "#1A56E8",
     borderRadius: 9999,
     paddingHorizontal: 12,
     paddingVertical: 4,
@@ -423,7 +565,7 @@ const styles = StyleSheet.create({
   itemBadgeText: {
     fontSize: 12,
     fontWeight: "600",
-    color: colors.onTertiaryContainer,
+    color: "white",
     letterSpacing: 0.3,
   },
   itemContent: {
@@ -570,6 +712,20 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
     fontWeight: "500",
+    color: colors.onSurfaceVariant,
+  },
+
+  emptyState: {
+    backgroundColor: colors.surfaceContainerLow,
+    borderRadius: 12,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.outlineVariant,
+  },
+
+  emptyStateText: {
+    fontSize: 14,
     color: colors.onSurfaceVariant,
   },
 });

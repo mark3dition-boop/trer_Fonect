@@ -1,15 +1,15 @@
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
-  Dimensions,
-  FlatList,
-  Image,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    FlatList,
+    Image,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../context/authContext";
@@ -19,18 +19,6 @@ const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 32 - 12) / 2;
 
 type BadgeType = "authority-handled" | "found" | "returned";
-
-function getBadgeStyle(status: BadgeType) {
-  const colorMap: Record<BadgeType, string> = {
-    found: colors.primary,        // biru
-    returned: colors.secondary,   // hijau (#006a61)
-    "authority-handled": "#43474e", // abu-abu
-  };
-
-  return {
-    backgroundColor: colorMap[status] ?? colors.primary,
-  };
-}
 
 function getBadgeText(status: BadgeType) {
   if (status === "authority-handled") {
@@ -71,7 +59,6 @@ interface ResultItem {
   timeAgo: string;
   imageUri: string;
 }
-
 
 const colors = {
   primary: "#1A56E8",
@@ -121,7 +108,20 @@ const colors = {
   secondaryFixed: "#89f5e7",
   onSurfaceVariant: "#43474e",
   prm: "#1A56E8",
+
 };
+
+function getBadgeStyle(status: BadgeType) {
+  const colorMap: Record<BadgeType, string> = {
+    found: colors.primary,        // biru
+    returned: colors.secondary,   // hijau (#006a61)
+    "authority-handled": "#43474e", // abu-abu
+  };
+
+  return {
+    backgroundColor: colorMap[status] ?? colors.primary,
+  };
+}
 
 function ResultCard({ item }: { item: any }) {
   return (
@@ -157,7 +157,7 @@ function ResultCard({ item }: { item: any }) {
   );
 }
 
-export default function SearchScreen() {
+export default function FoundItemsScreen() {
   const { profile } = useAuth();
 
   const [loading, setLoading] = useState(false);
@@ -169,7 +169,7 @@ export default function SearchScreen() {
     const { data, error } = await supabase
       .from("items")
       .select("*")
-      .neq("user_id", profile?.id)
+      .eq("user_id", profile?.id)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -183,7 +183,7 @@ export default function SearchScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      fetchItems();
+        fetchItems();
     }, [profile?.id])
   );
 
@@ -215,10 +215,10 @@ export default function SearchScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
-      {/* Header */}
-      <View style={styles.topBar}>
-          <Text style={styles.appTitle}>Fonect</Text>
-      </View>
+        {/* Header */}
+       <View style={styles.topBar}>
+           <Text style={styles.appTitle}>Fonect</Text>
+       </View>
 
       <FlatList
         data={displayedItems}
@@ -286,6 +286,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 3,
   },
+
   appTitle: {
     fontSize: 24,
     fontWeight: "700",

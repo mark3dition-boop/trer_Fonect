@@ -51,26 +51,26 @@ export default function RegisterScreen() {
       Alert.alert("Error", error.message);
       return;
     }
+    
+    // 2. AMBIL USER ID
+    const user = data.user!;
 
-  // 2. AMBIL USER ID
-  const user = data.user!;
+    // 3. INSERT KE TABLE USERS
+    const { error: dbError } = await supabase
+      .from("users")
+      .insert({
+        name: fullName,
+        nim: studentId,
+        email: formattedEmail,
+        password: password,
+      });
 
-  // 3. INSERT KE TABLE USERS
-  const { error: dbError } = await supabase
-    .from("users")
-    .insert({
-      name: fullName,
-      nim: studentId,
-      email: formattedEmail,
-      password: password,
-    });
+    if (dbError) {
+      Alert.alert("Error", dbError.message);
+      return;
+    }
 
-  if (dbError) {
-    Alert.alert("Error", dbError.message);
-    return;
-  }
-
-    Alert.alert("Success", "Account created");
+      Alert.alert("Success", "Account created");
   };
 
   return (
