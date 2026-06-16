@@ -1,50 +1,133 @@
-# Welcome to your Expo app 👋
+# Fonect
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## 📱 Overview
 
-## Get started
+**Fonect** (Found and Connect) is a mobile application built with React Native that helps students report, discover, and return lost items within the university environment. Fonect serves as a digital lost-and-found platform that connects students who have lost belongings with those who have found them in a fast, secure, and organized way.
 
-1. Install dependencies
+Beyond a traditional lost-and-found system, Fonect incorporates gamification features such as points and leaderboards to encourage active participation and foster a supportive campus community.
 
-   ```bash
-   npm install
-   ```
+---
 
-2. Start the app
+## ✨ Features
 
-   ```bash
-   npx expo start
-   ```
+### 🔐 Authentication
 
-In the output, you'll find options to open the app in a
+* Account registration
+* Secure login and logout
+* User profile management
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### 📦 Lost & Found Management
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+* Create found item reports
+* Upload item photos
+* Add item descriptions and locations
+* Real-time item status tracking
 
-## Get a fresh project
+### 🔍 Search & Discovery
 
-When you're ready, run:
+* Search items by keywords
+* Category-based filtering
+* Status-based filtering
+
+### 📄 Item Details
+
+* View complete item information
+* Display item photos, locations, and descriptions
+* View reporter information
+
+### 🤝 Return Verification
+
+* Return confirmation form
+* Recipient information recording
+
+### 🏆 Gamification
+
+* Point system for successful item returns
+* User contribution leaderboard
+* Activity and contribution statistics
+
+### 🌙 User Experience
+
+* Responsive interface across different screen sizes
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+
+* React Native
+* Expo
+* Expo Router
+* TypeScript
+
+### Backend & Database
+
+* Supabase
+
+  * Authentication
+  * PostgreSQL Database
+  * Storage
+
+### UI Components
+
+* React Native Components
+* Expo Vector Icons
+
+---
+
+## 📂 Project Structure
 
 ```bash
-npm run reset-project
+app/
+├── (tabs)/
+├── auth/
+├── item/
+├── leaderboard/
+├── profile/
+└── returned/
+
+components/
+constants/
+hooks/
+lib/
+assets/
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
+## 🗄️ Database
 
-To learn more about developing your project with Expo, look at the following resources:
+Fonect uses Supabase as its primary backend service for:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+* User Authentication
+* Item Management
+* Return Records
+* User Points
+* Leaderboard System
+* Image Storage
 
-## Join the community
+---
 
-Join our community of developers creating universal apps.
+## 🎯 Objectives
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+* Help students recover lost belongings more efficiently.
+* Simplify the process of reporting lost and found items.
+* Improve item return rates through a centralized digital platform.
+* Foster a culture of responsibility and mutual assistance within the campus community.
+
+---
+
+## 📱 Prototype App
+
+Add application screenshots in this section.
+
+```md
+https://drive.google.com/file/d/1zrH9Zf6k2n1pjzF9roi2zvl21d3DNt7x/view?usp=share_link
+```
+
+---
+
+## 📄 License
+
+This project is intended for educational and academic purposes only.
