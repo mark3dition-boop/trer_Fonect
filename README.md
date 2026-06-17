@@ -120,8 +120,6 @@ Fonect uses Supabase as its primary backend service for:
 
 ## 📱 Prototype App
 
-Add application screenshots in this section.
-
 ```md
 https://drive.google.com/file/d/1zrH9Zf6k2n1pjzF9roi2zvl21d3DNt7x/view?usp=share_link
 ```
