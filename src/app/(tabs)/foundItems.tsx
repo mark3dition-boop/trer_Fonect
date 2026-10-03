@@ -1,15 +1,16 @@
 import { router, useFocusEffect } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
-    Dimensions,
-    FlatList,
-    Image,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../context/authContext";
@@ -19,6 +20,8 @@ const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 32 - 12) / 2;
 
 type BadgeType = "authority-handled" | "found" | "returned";
+
+const CATEGORIES = ["All", "Electronics", "Wallet", "Keys", "Clothing", "Other"];
 
 function getBadgeText(status: BadgeType) {
   if (status === "authority-handled") {
@@ -49,15 +52,6 @@ function getTimeAgo(createdAt: string) {
   }
 
   return `${diffDays}d ago`;
-}
-
-interface ResultItem {
-  id: string;
-  title: string;
-  badge: BadgeType;
-  locationLabel: string;
-  timeAgo: string;
-  imageUri: string;
 }
 
 const colors = {
@@ -108,14 +102,13 @@ const colors = {
   secondaryFixed: "#89f5e7",
   onSurfaceVariant: "#43474e",
   prm: "#1A56E8",
-
 };
 
 function getBadgeStyle(status: BadgeType) {
   const colorMap: Record<BadgeType, string> = {
-    found: colors.primary,        // biru
-    returned: colors.secondary,   // hijau (#006a61)
-    "authority-handled": "#43474e", // abu-abu
+    found: colors.primary,
+    returned: colors.secondary,
+    "authority-handled": "#43474e",
   };
 
   return {
@@ -125,14 +118,17 @@ function getBadgeStyle(status: BadgeType) {
 
 function ResultCard({ item }: { item: any }) {
   return (
-    <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={() => {router.push({
-      pathname: "/item_details",
-      params: { itemId: item.id },
-    })}}>
-      <Image
-        source={{ uri: item?.img_url || "null"}}
-        style={styles.image}
-      />
+    <TouchableOpacity
+      style={styles.card}
+      activeOpacity={0.85}
+      onPress={() => {
+        router.push({
+          pathname: "/item_details",
+          params: { itemId: item.id },
+        });
+      }}
+    >
+      <Image source={{ uri: item?.img_url || "null" }} style={styles.image} />
 
       <View style={[styles.badge, getBadgeStyle(item?.status || "null")]}>
         <Text style={styles.badgeText}>
@@ -145,9 +141,7 @@ function ResultCard({ item }: { item: any }) {
           {item?.item_name || "null"}
         </Text>
 
-        <Text style={styles.location}>
-          📍{item?.location || "null"}
-        </Text>
+        <Text style={styles.location}>📍{item?.location || "null"}</Text>
 
         <Text style={styles.time}>
           {getTimeAgo(item?.created_at) || "null"}
@@ -160,8 +154,11 @@ function ResultCard({ item }: { item: any }) {
 export default function FoundItemsScreen() {
   const { profile } = useAuth();
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<any[]>([]);
+  const [query, setQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [visibleCount, setVisibleCount] = useState(4);
 
   async function fetchItems() {
     setLoading(true);
@@ -175,7 +172,7 @@ export default function FoundItemsScreen() {
     if (error) {
       console.error(error);
     } else {
-      setItems(data);
+      setItems(data || []);
     }
 
     setLoading(false);
@@ -183,42 +180,37 @@ export default function FoundItemsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-        fetchItems();
+      fetchItems();
     }, [profile?.id])
   );
 
 
-
-
-
-  const [query, setQuery] = useState("");
-  const [visibleCount, setVisibleCount] = useState(4);
-
   const filteredItems = useMemo(() => {
-    return items.filter((item) =>
-      item?.item_name
-        .toLowerCase()
-        .includes(query.toLowerCase())
-    );
-  }, [query, items]);
+    return items.filter((item) => {
+      const matchesSearch = item?.item_name
+        ?.toLowerCase()
+        .includes(query.toLowerCase());
 
-  const displayedItems = filteredItems.slice(
-    0,
-    visibleCount
-  );
+      const matchesCategory =
+        selectedCategory === "All" ||
+        item?.category?.toLowerCase() === selectedCategory.toLowerCase();
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [query, selectedCategory, items]);
+
+  const displayedItems = filteredItems.slice(0, visibleCount);
 
   const handleSeeMore = () => {
-    setVisibleCount((prev) => prev + 4);
+    setVisibleCount((prev) => prev + 8);
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-
-        {/* Header */}
-       <View style={styles.topBar}>
-           <Text style={styles.appTitle}>Fonect</Text>
-       </View>
+      {/* Header */}
+      <View style={styles.topBar}>
+        <Text style={styles.appTitle}>Items Found</Text>
+      </View>
 
       <FlatList
         data={displayedItems}
@@ -226,14 +218,27 @@ export default function FoundItemsScreen() {
         keyExtractor={(item) => item.id}
         columnWrapperStyle={styles.row}
         stickyHeaderIndices={[0]}
-        renderItem={({ item }) => (
-          <ResultCard item={item} />
-        )}
+        renderItem={({ item }) => <ResultCard item={item} />}
+
+        ListEmptyComponent={
+          loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={styles.loadingText}>Loading items...</Text>
+            </View>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No items found</Text>
+            </View>
+          )
+        }
+
         ListHeaderComponent={
           <View style={styles.searchHeader}>
             <View style={styles.searchBar}>
               <TextInput
                 placeholder="Search items..."
+                placeholderTextColor="#888"
                 value={query}
                 onChangeText={(text) => {
                   setQuery(text);
@@ -242,17 +247,46 @@ export default function FoundItemsScreen() {
                 style={styles.input}
               />
             </View>
+
+            {/* Horizontal Filter Category Chips */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryContainer}
+            >
+              {CATEGORIES.map((category) => {
+                const isSelected = selectedCategory === category;
+                return (
+                  <TouchableOpacity
+                    key={category}
+                    style={[
+                      styles.categoryChip,
+                      isSelected && styles.categoryChipActive,
+                    ]}
+                    onPress={() => {
+                      setSelectedCategory(category);
+                      setVisibleCount(4);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryText,
+                        isSelected && styles.categoryTextActive,
+                      ]}
+                    >
+                      {category}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
           </View>
         }
         ListFooterComponent={
           visibleCount < filteredItems.length ? (
-            <TouchableOpacity
-              style={styles.seeMoreBtn}
-              onPress={handleSeeMore}
-            >
-              <Text style={styles.seeMoreText}>
-                See More
-              </Text>
+            <TouchableOpacity style={styles.seeMoreBtn} onPress={handleSeeMore}>
+              <Text style={styles.seeMoreText}>See More</Text>
             </TouchableOpacity>
           ) : null
         }
@@ -274,35 +308,27 @@ const styles = StyleSheet.create({
 
   topBar: {
     height: 56,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.outlineVariant,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
+    // elevation: 2,
+    // marginBottom: -15,
+    marginTop: 15,
   },
 
   appTitle: {
-    fontSize: 24,
+    fontSize: 23,
     fontWeight: "700",
-    color: colors.prm,
+    color: "#000",
     letterSpacing: -0.3,
-  },
-
-  logo: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: colors.primary,
   },
 
   searchHeader: {
     backgroundColor: colors.background,
     paddingBottom: 12,
+    // backgroundColor: "red"
   },
 
   searchBar: {
@@ -313,10 +339,41 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderWidth: 1,
     borderColor: colors.outline,
+    marginBottom: 12,
   },
 
   input: {
     fontSize: 16,
+  },
+
+  /* Style Tambahan untuk Filter Kategori */
+  categoryContainer: {
+    paddingVertical: 2,
+    gap: 8,
+  },
+
+  categoryChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.outline,
+  },
+
+  categoryChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+
+  categoryText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.text,
+  },
+
+  categoryTextActive: {
+    color: colors.white,
   },
 
   row: {
@@ -388,5 +445,25 @@ const styles = StyleSheet.create({
   seeMoreText: {
     color: colors.primary,
     fontWeight: "600",
+  },
+
+  loadingContainer: {
+    paddingVertical: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: colors.onSurfaceVariant,
+  },
+  emptyContainer: {
+    paddingVertical: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyText: {
+    fontSize: 14,
+    color: colors.onSurfaceVariant,
   },
 });

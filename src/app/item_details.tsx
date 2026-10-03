@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Image,
@@ -81,6 +81,26 @@ function formatTime(seconds: number): string {
   return `${h}:${m}:${s}`;
 }
 
+function formatDateTime(isoString: string) {
+
+  if (!isoString) return "Null";
+
+  const date = new Date(isoString);
+  
+  const formattedDate = date.toLocaleDateString("en-US", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  const formattedTime = date.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return `${formattedDate}\n${formattedTime}`;
+}
+
 
 function StatusBadge({
   status,
@@ -153,6 +173,7 @@ export default function ItemDetailsScreen() {
   const { itemId } = useLocalSearchParams();
   const { profile }= useAuth();
   const [item, setItem] = useState<any>(null);
+  // const [returnDate, setReturnDate] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   async function fetchItem() {
@@ -178,6 +199,7 @@ export default function ItemDetailsScreen() {
       }
 
       setLoading(false);
+
   }
 
   const handleContactFinder = async () => {
@@ -188,9 +210,9 @@ export default function ItemDetailsScreen() {
         return;
       }
 
-      const subject = encodeURIComponent(`Mengenai barang temuan: ${item?.item_name}`);
+      const subject = encodeURIComponent(`Regarding found item: ${item?.item_name}`);
       const body = encodeURIComponent(
-        `Halo,\n\nSaya tertarik dengan barang yang kamu temukan (${item?.item_name}).\n\nTerima kasih.`
+        `Hello,\n\nI am interested in the item you found: (${item?.item_name}).\n\nLet's meet somewhere.\n\nThank you.`
       );
 
       const mailtoUrl = `mailto:${finderEmail}?subject=${subject}&body=${body}`;
@@ -198,18 +220,13 @@ export default function ItemDetailsScreen() {
        try {
         await Linking.openURL(mailtoUrl);
       } catch (error) {
-        Alert.alert("Error", "Tidak ada aplikasi email yang terpasang.");
+        Alert.alert("Error", "There is no email apps.");
       }
 };
   
-  // ─── Mock Data ──────────────────────────────────────────────────────────
-  // nanti dari database
+  const userItem = item?.user_id === profile?.id;
 
-  const userItem = item?.user_id === profile?.id ? true : false;
-
-  // ─── State ──────────────────────────────────────────────────────────────
-
-  const [status, setStatus] = useState<StatusType>("returned");
+  const status: StatusType = item?.status || "found";
 
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
@@ -235,10 +252,6 @@ export default function ItemDetailsScreen() {
     }, [itemId])
   );
 
-  useEffect(() => {
-      setStatus(item?.status || "found");
-  }, [item]);
-  
   // ─── Actions ────────────────────────────────────────────────────────────
 
   const handleAuthority = async () => {
@@ -427,7 +440,7 @@ export default function ItemDetailsScreen() {
                   activeOpacity={0.85}
                   disabled={loading}
                   onPress={() => router.push({
-                      pathname: '/returnedToOwner_form',
+                      pathname: '/verifOwner',
                       params: { itemId: itemId }
                     })}
                 >
@@ -486,6 +499,7 @@ export default function ItemDetailsScreen() {
                     ? `Returned to ${item?.returned_items?.receiver_name || "null"}`
                     : "Handed over to authority"}
                 </Text>
+                <Text>{formatDateTime(item?.returned_items?.created_at)}</Text>
               </View>
             </View>
           )}
@@ -701,42 +715,6 @@ const styles = StyleSheet.create({
 
   finderActions: {
     gap: 12,
-  },
-
-  infoBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-
-    gap: 12,
-
-    padding: 14,
-
-    borderRadius: 12,
-
-    backgroundColor:
-      colors.surfaceContainerHigh,
-  },
-
-  infoBannerIcon: {
-    width: 36,
-    height: 36,
-
-    borderRadius: 18,
-
-    alignItems: "center",
-    justifyContent: "center",
-
-    backgroundColor:
-      colors.primaryContainer,
-  },
-
-  infoBannerText: {
-    flex: 1,
-
-    fontSize: 14,
-    lineHeight: 20,
-
-    color: colors.onSurface,
   },
 
   actionButtons: {

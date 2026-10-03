@@ -1,7 +1,10 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
@@ -10,9 +13,10 @@ export default function TabsLayout() {
         tabBarActiveTintColor: "#1A56E8",
         tabBarInactiveTintColor: "#666",
 
+        // Tambahkan inset bawah agar tidak tertimpa tombol navigasi sistem
         tabBarStyle: {
-          height: 65,
-          paddingBottom: 8,
+          height: 65 + insets.bottom,
+          paddingBottom: 8 + insets.bottom,
           paddingTop: 8,
         },
       }}
@@ -25,14 +29,6 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),
-        }}
-      />
-
-      // Hide Upload from tab bar
-      <Tabs.Screen
-        name="upload_item"
-        options={{
-          href: null, // menyembunyikan dari tab bar
         }}
       />
 

@@ -1,11 +1,11 @@
 import { useFocusEffect } from "expo-router";
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../lib/supabase";
@@ -213,15 +213,11 @@ export default function Leaderboard() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Header */}
-      <View style={styles.topBar}>
-        <Text style={styles.appTitle}>Fonect</Text>
-      </View>
 
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={BRAND} />
-          <Text style={styles.loadingText}>Memuat leaderboard…</Text>
+          <Text style={styles.loadingText}>Loading leaderboard…</Text>
         </View>
       ) : error ? (
         <View style={styles.center}>

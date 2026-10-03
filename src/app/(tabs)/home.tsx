@@ -148,7 +148,7 @@ export default function FonectHome() {
       found: 0,
       returned: 1,
       "authority-handled": 2,
-    };
+  };
 
     const { data: user_items, error: user_item_error } = await supabase
       .from("items")
@@ -399,6 +399,7 @@ const styles = StyleSheet.create({
     height: 56,
     backgroundColor: colors.surface,
     flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,
     borderBottomWidth: 1,
@@ -420,6 +421,7 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     backgroundColor: colors.background,
+    // backgroundColor: "red"
   },
   scrollContent: {
     padding: 16,

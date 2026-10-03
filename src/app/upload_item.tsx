@@ -16,10 +16,11 @@ import {
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
+import { File } from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth } from '../../context/authContext';
-import { supabase } from '../../lib/supabase';
+import { useAuth } from '../context/authContext';
+import { supabase } from '../lib/supabase';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type SubmitState = 'idle' | 'loading' | 'success';
@@ -145,6 +146,17 @@ const ReportFoundItem: React.FC = () => {
     });
 
     if (!result.canceled) {
+        const asset = result.assets[0];
+
+      console.log("=== PICKER DEBUG ===");
+      console.log("URI:", asset.uri);
+      console.log("FILE NAME:", asset.fileName);
+      console.log("FILE SIZE:", asset.fileSize);
+      console.log("MIME TYPE:", asset.mimeType);
+      console.log("WIDTH:", asset.width);
+      console.log("HEIGHT:", asset.height);
+      console.log("====================");
+
         setImageUri(result.assets[0].uri);
     }
     // if (imageUri) return;
@@ -159,34 +171,55 @@ const ReportFoundItem: React.FC = () => {
     if (!imageUri) return null;
 
     try {
-        const response = await fetch(imageUri);
+      const file = new File(imageUri);
 
-        const arrayBuffer = await response.arrayBuffer();
+      console.log("=== FILE SYSTEM DEBUG ===");
+      console.log("URI:", file.uri);
+      console.log("EXISTS:", file.exists);
+      console.log("SIZE:", file.size);
+      console.log("TYPE:", file.type);
+      console.log("=========================");
 
-        const fileExt = imageUri.split(".").pop() || "jpg";
+      if (!file.exists) {
+        throw new Error("Selected image file does not exist.");
+      }
 
-        const fileName = `${Date.now()}.${fileExt}`;
+      const arrayBuffer = await file.arrayBuffer();
 
-        const { error } = await supabase.storage
+      console.log("ARRAY BUFFER SIZE:", arrayBuffer.byteLength);
+
+      const fileName = `${Date.now()}.jpg`;
+
+      const { data, error } = await supabase.storage
         .from("item_img_bucket")
         .upload(fileName, arrayBuffer, {
-            contentType: `image/${fileExt}`,
+          contentType: "image/jpeg",
+          upsert: false,
         });
 
-        if (error) {
-            Alert.alert("Error", error.message)
-            return null;
-        }
+      if (error) {
+        console.error("Supabase upload error:", error);
+        Alert.alert("Upload Error", error.message);
+        return null;
+      }
 
-        const { data } = supabase.storage
+      console.log("UPLOAD SUCCESS:", data);
+
+      const { data: publicUrlData } = supabase.storage
         .from("item_img_bucket")
         .getPublicUrl(fileName);
 
-        return data.publicUrl;
+      return publicUrlData.publicUrl;
 
     } catch (err) {
-        console.log(err);
-        return null;
+      console.error("Upload error:", err);
+
+      Alert.alert(
+        "Upload Error",
+        err instanceof Error ? err.message : "Unknown error"
+      );
+
+      return null;
     }
   };
   
@@ -377,33 +410,30 @@ const ReportFoundItem: React.FC = () => {
             By posting, you agree to drop this item off at the Campus Security office or hand it over directly to the owner within 24 hours.
           </Text>
         </View>
+    
 
-        {/* Bottom spacer so content isn't hidden behind fixed footer */}
-        <View style={{ height: 100 }} />
+        <View style={styles.footer}>
+          <Animated.View style={{ transform: [{ scale: scaleAnim }], width: '90%' }}>
+            <TouchableOpacity
+              style={[
+                styles.submitBtn,
+                submitState === 'success' && styles.submitBtnSuccess,
+              ]}
+              onPress={handleSubmit}
+              activeOpacity={0.9}
+              disabled={submitState !== 'idle'}
+            >
+              {submitState === 'loading' ? (
+                <ActivityIndicator color="#ffffff" size="small" />
+              ) : submitState === 'success' ? (
+                <Text style={styles.submitBtnText}>✓  Item Reported!</Text>
+              ) : (
+                <Text style={styles.submitBtnText}>Post Item</Text>
+              )}
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
       </ScrollView>
-
-      {/* ── Fixed Footer ──────────────────────────────────────── */}
-      <View style={styles.footer}>
-        <Animated.View style={{ transform: [{ scale: scaleAnim }], width: '90%' }}>
-          <TouchableOpacity
-            style={[
-              styles.submitBtn,
-              submitState === 'success' && styles.submitBtnSuccess,
-            ]}
-            onPress={handleSubmit}
-            activeOpacity={0.9}
-            disabled={submitState !== 'idle'}
-          >
-            {submitState === 'loading' ? (
-              <ActivityIndicator color="#ffffff" size="small" />
-            ) : submitState === 'success' ? (
-              <Text style={styles.submitBtnText}>✓  Item Reported!</Text>
-            ) : (
-              <Text style={styles.submitBtnText}>Post Item</Text>
-            )}
-          </TouchableOpacity>
-        </Animated.View>
-      </View>
     </SafeAreaView>
   );
 };
@@ -670,22 +700,14 @@ const styles = StyleSheet.create({
 
   // ── Footer
   footer: {
-    position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: palette.surface,
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: Platform.OS === 'ios' ? 32 : 20,
     alignItems: 'center',
     gap: 5,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: palette.outlineVariant,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.06, shadowRadius: 8 },
-      android: { elevation: 8 },
-    }),
   },
   submitBtn: {
     width: '100%',

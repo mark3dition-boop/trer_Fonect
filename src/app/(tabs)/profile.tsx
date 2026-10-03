@@ -1,13 +1,15 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
+import QRCode from "react-native-qrcode-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../context/authContext";
 import { supabase } from "../../lib/supabase";
@@ -116,12 +118,13 @@ export default function Profile() {
   const router = useRouter();
   const { profile } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [showQR, setShowQR] = useState(false);
    
   const handleLogout = async () => {
-    Alert.alert("Keluar", "Apakah kamu yakin ingin logout?", [
-      { text: "Batal", style: "cancel" },
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
       {
-        text: "Logout",
+        text: "Sign Out",
         style: "destructive",
         onPress: async () => {
           const { error } = await supabase.auth.signOut();
@@ -138,15 +141,11 @@ export default function Profile() {
   return (
     
     <SafeAreaView style={styles.safe}>
-        {/* Header */}
-        <View style={styles.topBar}>
-            <Text style={styles.appTitle}>Fonect</Text>
-        </View>
 
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#4F6BFF" />
-          <Text style={styles.loadingText}>Memuat profil…</Text>
+          <Text style={styles.loadingText}>Loading profile…</Text>
         </View>
       ) : (
         <View style={styles.content}>
@@ -154,21 +153,32 @@ export default function Profile() {
           <View style={styles.heroCard}>
             <View style={styles.heroBg} />
             <Avatar name={profile?.name ?? ""} />
-            <Text style={styles.heroName}>{profile?.name ?? "—"}</Text>
-            <View style={styles.nimBadge}>
-              <Text style={styles.nimBadgeText}>NIM {profile?.nim ?? "—"}</Text>
+            
+            {/* Info list */}
+            <View style={styles.infoCard}>
+              <Text style={styles.infoCardTitle}>Account Information</Text>
+              <InfoRow label="Full Name" value={profile?.name ?? "—"} icon="👤" />
+              <View style={styles.divider} />
+              <InfoRow label="Student ID" value={profile?.nim ?? "—"} icon="🎓" />
+              <View style={styles.divider} />
+              <InfoRow label="Email" value={profile?.email ?? "—"} icon="✉️" />
             </View>
+
           </View>
 
-          {/* Info list */}
-          <View style={styles.infoCard}>
-            <Text style={styles.infoCardTitle}>Account Information</Text>
-            <InfoRow label="Full Name" value={profile?.name ?? "—"} icon="👤" />
-            <View style={styles.divider} />
-            <InfoRow label="Student ID" value={profile?.nim ?? "—"} icon="🎓" />
-            <View style={styles.divider} />
-            <InfoRow label="Email" value={profile?.email ?? "—"} icon="✉️" />
-          </View>
+
+          {/* QR Button */}
+          <TouchableOpacity
+            style={styles.qrButton}
+            onPress={() => setShowQR(true)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.qrButtonIcon}>▣</Text>
+            <Text style={styles.qrButtonText}>
+              Show QR Code
+            </Text>
+          </TouchableOpacity>
+
 
           {/* Logout */}
           <TouchableOpacity
@@ -176,10 +186,69 @@ export default function Profile() {
             onPress={handleLogout}
             activeOpacity={0.8}
           >
-            <Text style={styles.logoutText}>Logout</Text>
+            <Text style={styles.logoutText}>Sign Out</Text>
           </TouchableOpacity>
         </View>
       )}
+
+      <Modal
+        visible={showQR}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowQR(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.qrModal}>
+
+            {/* Close button */}
+            {/* <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowQR(false)}
+            >
+              <Text style={styles.closeButtonText}>×</Text>
+            </TouchableOpacity> */}
+
+            <Text style={styles.qrTitle}>
+              Student Verification
+            </Text>
+
+            <Text style={styles.qrSubtitle}>
+              Let the finder scan this QR code to verify
+              your identity.
+            </Text>
+
+            {/* QR */}
+            <View style={styles.qrContainer}>
+              <QRCode
+                value={`${profile?.nim}`}
+                size={220}
+                backgroundColor="white"
+                color="black"
+              />
+            </View>
+
+            <Text style={styles.qrName}>
+              {profile?.name ?? "—"}
+            </Text>
+
+            <Text style={styles.qrNim}>
+              {profile?.nim ?? "—"}
+            </Text>
+
+            <TouchableOpacity
+              style={styles.doneButton}
+              onPress={() => setShowQR(false)}
+            >
+              <Text style={styles.doneButtonText}>
+                Done
+              </Text>
+            </TouchableOpacity>
+
+          </View>
+        </View>
+      </Modal>
+
+
     </SafeAreaView>
   );
 }
@@ -197,6 +266,7 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: BG,
+    marginTop: 50
   },
 
   // ── Header
@@ -251,6 +321,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     gap: 16,
+    // backgroundColor: "red"
   },
 
   // ── Hero card
@@ -326,7 +397,8 @@ const styles = StyleSheet.create({
 
   // ── Info card
   infoCard: {
-    backgroundColor: SURFACE,
+    width: "90%",
+    backgroundColor: "white",
     borderRadius: 20,
     paddingHorizontal: 20,
     paddingVertical: 20,
@@ -403,4 +475,133 @@ const styles = StyleSheet.create({
     color: "#D93025",
     letterSpacing: 0.2,
   },
+
+  // QR
+
+  qrButton: {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 10,
+  backgroundColor: BRAND,
+  borderRadius: 16,
+  paddingVertical: 16,
+  elevation: 2,
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.08,
+  shadowRadius: 5,
+},
+
+qrButtonIcon: {
+  fontSize: 20,
+  color: "#FFFFFF",
+},
+
+qrButtonText: {
+  fontSize: 15,
+  fontWeight: "700",
+  color: "#FFFFFF",
+  letterSpacing: 0.2,
+},
+
+// ── QR Modal
+
+modalOverlay: {
+  flex: 1,
+  backgroundColor: "rgba(0, 0, 0, 0.55)",
+  justifyContent: "center",
+  alignItems: "center",
+  paddingHorizontal: 24,
+},
+
+qrModal: {
+  width: "100%",
+  maxWidth: 380,
+  backgroundColor: "#FFFFFF",
+  borderRadius: 28,
+  paddingHorizontal: 24,
+  paddingVertical: 28,
+  alignItems: "center",
+  elevation: 10,
+  shadowColor: "#000",
+  shadowOffset: {
+    width: 0,
+    height: 6,
+  },
+  shadowOpacity: 0.2,
+  shadowRadius: 12,
+},
+
+closeButton: {
+  position: "absolute",
+  right: 16,
+  top: 12,
+  width: 36,
+  height: 36,
+  borderRadius: 18,
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: "#F1F3F7",
+},
+
+closeButtonText: {
+  fontSize: 26,
+  lineHeight: 28,
+  color: TEXT_SECONDARY,
+  fontWeight: "400",
+},
+
+qrTitle: {
+  fontSize: 22,
+  fontWeight: "700",
+  color: TEXT_PRIMARY,
+  marginBottom: 8,
+},
+
+qrSubtitle: {
+  fontSize: 13,
+  lineHeight: 19,
+  color: TEXT_SECONDARY,
+  textAlign: "center",
+  paddingHorizontal: 20,
+  marginBottom: 24,
+},
+
+qrContainer: {
+  padding: 18,
+  backgroundColor: "#FFFFFF",
+  borderRadius: 20,
+  borderWidth: 1,
+  borderColor: "#E8EBF2",
+  marginBottom: 18,
+},
+
+qrName: {
+  fontSize: 17,
+  fontWeight: "700",
+  color: TEXT_PRIMARY,
+  marginBottom: 4,
+},
+
+qrNim: {
+  fontSize: 14,
+  fontWeight: "500",
+  color: TEXT_SECONDARY,
+  marginBottom: 22,
+},
+
+doneButton: {
+  width: "100%",
+  backgroundColor: BRAND,
+  borderRadius: 14,
+  paddingVertical: 14,
+  alignItems: "center",
+},
+
+doneButtonText: {
+  fontSize: 15,
+  fontWeight: "700",
+  color: "#FFFFFF",
+},
 });

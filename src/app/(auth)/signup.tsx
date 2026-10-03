@@ -75,10 +75,11 @@ export default function RegisterScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Register</Text>
+      <Text style={styles.title}>Sign Up</Text>
 
       <TextInput
         placeholder="Full Name"
+        placeholderTextColor="#888"
         style={styles.input}
         value={fullName}
         onChangeText={setFullName}
@@ -86,6 +87,7 @@ export default function RegisterScreen() {
 
       <TextInput
         placeholder="Email"
+        placeholderTextColor="#888"
         style={styles.input}
         value={email}
         onChangeText={setEmail}
@@ -94,6 +96,7 @@ export default function RegisterScreen() {
 
       <TextInput
         placeholder="Student ID"
+        placeholderTextColor="#888"
         style={styles.input}
         value={studentId}
         onChangeText={setStudentId}
@@ -101,6 +104,7 @@ export default function RegisterScreen() {
       <View style={styles.inputPwWrapper}>
          <TextInput
             placeholder="Password"
+            placeholderTextColor="#888"
             style={styles.inputPw}
             value={password}
             onChangeText={setPassword}
@@ -118,7 +122,7 @@ export default function RegisterScreen() {
         style={styles.button}
         onPress={handleRegister}
       >
-        <Text style={styles.buttonText}>Register</Text>
+        <Text style={styles.buttonText}>Sign Up</Text>
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => router.push('/(auth)/login')}>

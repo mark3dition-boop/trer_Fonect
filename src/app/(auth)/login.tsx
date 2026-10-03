@@ -51,23 +51,23 @@ export default function login() {
 
         <Text style={styles.brandName}>Fonect</Text>
         <Text style={styles.tagline}>
-          Temukan barang anda yang hilang{'\n'}dengan mudah dan seru!
+          Find your lost belongings{'\n'}quickly and easily!
         </Text>
       </View>
 
       {/* Card */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Masuk ke Akun</Text>
-        <Text style={styles.cardSubtitle}>Senang melihat Anda kembali.</Text>
+        <Text style={styles.cardTitle}>Sign In to Your Account</Text>
+        <Text style={styles.cardSubtitle}>Glad to see you again!</Text>
 
         {/* Email Field */}
         <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Alamat Email</Text>
+          <Text style={styles.label}>Email</Text>
           <View style={styles.inputWrapper}>
             <Ionicons name="mail-outline" size={20} color="#B0B8C9" />
             <TextInput
               style={styles.input}
-              placeholder="nama@email.com"
+              placeholder="example@email.com"
               placeholderTextColor="#B0B8C9"
               keyboardType="email-address"
               autoCapitalize="none"
@@ -80,9 +80,9 @@ export default function login() {
         {/* Password Field */}
         <View style={styles.fieldContainer}>
           <View style={styles.passwordLabelRow}>
-            <Text style={styles.label}>Kata Sandi</Text>
+            <Text style={styles.label}>Password</Text>
             <TouchableOpacity>
-              <Text style={styles.forgotLink}>Lupa Sandi?</Text>
+              <Text style={styles.forgotLink}>Forgot Password?</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.inputWrapper}>
@@ -106,15 +106,15 @@ export default function login() {
 
         {/* Login Button */}
         <TouchableOpacity style={styles.loginButton} activeOpacity={0.85} onPress={handleLogin}>
-          <Text style={styles.loginButtonText}>Masuk Sekarang</Text>
+          <Text style={styles.loginButtonText}>Sign In</Text>
         </TouchableOpacity>
 
 
         {/* Sign Up */}
         <View style={styles.signupRow}>
-          <Text style={styles.signupText}>Belum punya akun? </Text>
+          <Text style={styles.signupText}>Don't have an account? </Text>
           <TouchableOpacity onPress={() => router.push('/(auth)/signup')}>
-            <Text style={styles.signupLink}>Daftar Gratis</Text>
+            <Text style={styles.signupLink}>Sign Up</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -122,7 +122,7 @@ export default function login() {
       {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          © 2026 Fonect — Membantu Memulihkan Barang Hilang.
+          © 2026 Fonect — Helps Recover Lost Items.
         </Text>
       </View>
     </ScrollView>
