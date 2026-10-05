@@ -12,12 +12,11 @@ export default function TabsLayout() {
 
         tabBarActiveTintColor: "#1A56E8",
         tabBarInactiveTintColor: "#666",
-
-        // Tambahkan inset bawah agar tidak tertimpa tombol navigasi sistem
         tabBarStyle: {
           height: 65 + insets.bottom,
           paddingBottom: 8 + insets.bottom,
           paddingTop: 8,
+          marginTop: -50
         },
       }}
     >

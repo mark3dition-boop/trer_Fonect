@@ -209,7 +209,7 @@ export default function Profile() {
             </TouchableOpacity> */}
 
             <Text style={styles.qrTitle}>
-              Student Verification
+              Verification
             </Text>
 
             <Text style={styles.qrSubtitle}>
